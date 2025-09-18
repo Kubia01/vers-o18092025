@@ -182,12 +182,41 @@ class PDFCotacao(FPDF):
         self.set_line_width(0.5)
         self.rect(5, 5, 200, 287)
 
-        # Cabeçalho com imagem fixa ocupando toda a faixa do cabeçalho, encostando na borda
-        # (incluindo página 2, mas sem logo)
+        # Cabeçalho com imagem ocupando toda a faixa do cabeçalho, variando por filial
         try:
-            header_img = os.path.join(os.path.dirname(__file__), '..', 'cabeçalho.jpeg')
-            if not os.path.exists(header_img):
-                header_img = os.path.join(os.path.dirname(__file__), '..', 'cabecalho.jpeg')
+            # Determinar filial por CNPJ conhecido (ou usar imagem padrão)
+            cnpj_val = (self.dados_filial.get('cnpj') or '').strip()
+            is_filial_1 = (cnpj_val == "10.644.944/0001-55")
+
+            # Selecionar imagem por filial conforme solicitado
+            if is_filial_1:
+                # Filial 1 -> cabeçalho.jpeg
+                header_candidates = [
+                    os.path.join(os.path.dirname(__file__), '..', 'cabeçalho.jpeg'),
+                    os.path.join(os.path.dirname(__file__), '..', 'cabecalho.jpeg')
+                ]
+            else:
+                # Filial 2 -> cabeçalho2.jpeg
+                header_candidates = [
+                    os.path.join(os.path.dirname(__file__), '..', 'cabeçalho2.jpeg'),
+                    os.path.join(os.path.dirname(__file__), '..', 'cabecalho2.jpeg')
+                ]
+
+            header_img = None
+            for candidate in header_candidates:
+                if os.path.exists(candidate):
+                    header_img = candidate
+                    break
+            # Fallback para imagem padrão se a específica da filial não existir
+            if not header_img:
+                fallback_candidates = [
+                    os.path.join(os.path.dirname(__file__), '..', 'cabeçalho.jpeg'),
+                    os.path.join(os.path.dirname(__file__), '..', 'cabecalho.jpeg')
+                ]
+                for candidate in fallback_candidates:
+                    if os.path.exists(candidate):
+                        header_img = candidate
+                        break
             if os.path.exists(header_img):
                 # Posicionar a imagem dentro da borda (sem cobrir a linha)
                 self.image(header_img, x=5.5, y=5.5, w=199, h=29)
@@ -233,7 +262,8 @@ class PDFCotacao(FPDF):
         
         # Informações do rodapé centralizadas - adaptadas por filial (nome, CNPJ/IE, endereço)
         cnpj_val = self.dados_filial.get('cnpj', '') or 'N/A'
-        email_val = self.dados_filial.get('email', '')
+        # Email deve ser do usuário criador, conforme requisito
+        email_val = (self.dados_usuario or {}).get('email', '') or ''
         fone_val = self.dados_filial.get('telefones', '')
 
         # Defaults por CNPJ informado
