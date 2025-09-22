@@ -218,8 +218,9 @@ class PDFCotacao(FPDF):
                         header_img = candidate
                         break
             if os.path.exists(header_img):
-                # Posicionar a imagem dentro da borda (sem cobrir a linha)
-                self.image(header_img, x=5.5, y=5.5, w=199, h=29)
+                # Posicionar a imagem dentro da borda preservando a proporção para evitar esticar o logo/texto
+                # Em FPDF, informar apenas 'h' mantém o aspect ratio automaticamente
+                self.image(header_img, x=5.5, y=5.5, w=0, h=29)
         except Exception:
             pass
 
@@ -662,8 +663,8 @@ Atenciosamente,
             pdf.set_font("Arial", '', 11)
             pdf.cell(0, 5, clean_text("Vendas"), 0, 1, 'L')
             pdf.cell(0, 5, clean_text(f"Fone: {dados_filial.get('telefones', '')}"), 0, 1, 'L')
-            # Nome da empresa após o telefone
-            pdf.cell(0, 5, clean_text("WORLD COMP DO BRASIL COMPRESSORES LTDA"), 0, 1, 'L')
+            # Nome da empresa após o telefone (usar filial correta)
+            pdf.cell(0, 5, clean_text(dados_filial.get('nome', '')), 0, 1, 'L')
         else:
             pdf.set_font("Arial", 'B', 11)
             pdf.cell(0, 6, clean_text(responsavel_nome.upper()), 0, 1, 'L')
